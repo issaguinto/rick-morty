@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Rick and Morty{% endblock %}</title>
+    {% block stylesheets %}
+        {{ encore_entry_link_tags('app') }}
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    {% endblock %}
+    {% block javascripts %}
+        {{ encore_entry_script_tags('app') }}
+    {% endblock %}
+</head>
+<body class="bg-gradient-to-br from-gray-900 to-gray-800 min-h-screen font-['Poppins']">
+    <nav class="bg-gray-900/90 backdrop-blur-md border-b border-green-500/20 shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center space-x-3">
+                    <a href="{{ path('app_home') }}" class="group flex items-center space-x-3 px-3 py-2 rounded-lg transition-all duration-300 hover:bg-green-500/10">
+                        <div class="relative">
+                            <div class="absolute inset-0 bg-gradient-to-r from-green-400 to-blue-500 rounded-full blur opacity-75 group-hover:opacity-100 transition-opacity duration-300"></div>
+                            <img src="https://rickandmortyapi.com/icons/icon-512x512.png" class="h-8 w-8 rounded-full relative z-10 border-2 border-green-400/50" alt="Rick and Morty Logo">
+                        </div>
+                        <span class="text-white font-bold text-lg tracking-tight group-hover:text-green-400 transition-colors duration-200">
+                            Rick and Morty
+                        </span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        {% block body %}{% endblock %}
+    </main>
+</body>
+</html>

@@ -1,0 +1,262 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+<div class="container mx-auto px-4 py-8">
+    <!-- Search Forms -->
+    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 mb-8">
+        <div class="bg-gradient-to-br from-blue-600 to-green-500 overflow-hidden shadow rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+                <h3 class="text-lg leading-6 font-medium text-white">Search by Dimension</h3>
+                <form id="dimensionForm" class="mt-4">
+                    <label for="dimension" class="block text-sm font-medium text-green-100">Select Dimension</label>
+                    <select name="dimension" id="dimension" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-green-400 focus:border-green-400 sm:text-sm rounded-md">
+                        <option value="">Select a dimension</option>
+                        <option value="Dimension C-137">Dimension C-137</option>
+                        <option value="unknown">Unknown</option>
+                        <option value="Replacement Dimension">Replacement Dimension</option>
+                    </select>
+                    <button type="submit" id="dimensionBtn" class="mt-3 w-full inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-blue-900 bg-white hover:bg-green-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-400">
+                        <span class="btn-text">Search</span>
+                        <span class="btn-loading" style="display: none;">Searching...</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="bg-gradient-to-br from-green-600 to-blue-500 overflow-hidden shadow rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+                <h3 class="text-lg leading-6 font-medium text-white">Search by Location</h3>
+                <form id="locationForm" class="mt-4">
+                    <label for="location" class="block text-sm font-medium text-blue-100">Select Location</label>
+                    <select name="location" id="location" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-400 focus:border-blue-400 sm:text-sm rounded-md">
+                        <option value="">Select a location</option>
+                        {% for location in locations %}
+                            <option value="{{ location.name }}">{{ location.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit" id="locationBtn" class="mt-3 w-full inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-green-900 bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-400">
+                        <span class="btn-text">Search</span>
+                        <span class="btn-loading" style="display: none;">Searching...</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="bg-gradient-to-br from-blue-500 to-green-600 overflow-hidden shadow rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+                <h3 class="text-lg leading-6 font-medium text-white">Search by Episode</h3>
+                <form id="episodeForm" class="mt-4">
+                    <label for="episode" class="block text-sm font-medium text-green-100">Select Episode</label>
+                    <select name="episode" id="episode" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-green-400 focus:border-green-400 sm:text-sm rounded-md">
+                        <option value="">Select an episode</option>
+                        {% for episode in episodes %}
+                            <option value="{{ episode.name }}">{{ episode.episode }} - {{ episode.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit" id="episodeBtn" class="mt-3 w-full inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-blue-900 bg-white hover:bg-green-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-400">
+                        <span class="btn-text">Search</span>
+                        <span class="btn-loading" style="display: none;">Searching...</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Indicator -->
+    <div id="loading" style="display: none;" class="text-center py-8">
+        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <p class="mt-2 text-gray-600">Searching...</p>
+    </div>
+
+    <!-- Results Container -->
+    <div id="results" style="display: none;">
+        <div class="bg-gradient-to-br from-blue-600 via-purple-600 to-green-600 shadow overflow-hidden sm:rounded-md">
+            <div class="px-4 py-5 sm:p-6">
+                <h2 id="resultsTitle" class="text-2xl font-bold text-white mb-4"></h2>
+                <div id="charactersGrid" class="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"></div>
+                <div id="noResults" style="display: none;" class="text-center py-8">
+                    <p class="text-blue-100">No characters found for this search.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Form handlers
+    document.getElementById('dimensionForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const dimension = document.getElementById('dimension').value;
+        if (dimension) {
+            searchCharacters('dimension', dimension, 'dimensionBtn');
+        }
+    });
+
+    document.getElementById('locationForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const location = document.getElementById('location').value;
+        if (location) {
+            searchCharacters('location', location, 'locationBtn');
+        }
+    });
+
+    document.getElementById('episodeForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const episode = document.getElementById('episode').value;
+        if (episode) {
+            searchCharacters('episode', episode, 'episodeBtn');
+        }
+    });
+
+    function searchCharacters(type, value, buttonId) {
+        // Get the button that was clicked
+        const button = document.getElementById(buttonId);
+        
+        if (button) {
+            const btnText = button.querySelector('.btn-text');
+            const btnLoading = button.querySelector('.btn-loading');
+            
+            // Set button to loading state
+            if (btnText) btnText.style.display = 'none';
+            if (btnLoading) btnLoading.style.display = 'inline';
+            button.disabled = true;
+            button.classList.add('opacity-75', 'cursor-not-allowed');
+        }
+        
+        // Show loading
+        const loadingEl = document.getElementById('loading');
+        const resultsEl = document.getElementById('results');
+        
+        loadingEl.style.display = 'block';
+        resultsEl.style.display = 'none';
+
+        // Build API URL
+        const url = `/api/characters/${type}?${type}=${encodeURIComponent(value)}`;
+
+        // Make AJAX request
+        fetch(url)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Hide loading and show results
+                const loadingElement = document.getElementById('loading');
+                const resultsElement = document.getElementById('results');
+                
+                loadingElement.style.display = 'none';
+                resultsElement.style.display = 'block';
+                
+                const titleElement = document.getElementById('resultsTitle');
+                titleElement.textContent = data.title;
+                
+                const grid = document.getElementById('charactersGrid');
+                const noResults = document.getElementById('noResults');
+                
+                if (data.characters && data.characters.length > 0) {
+                    // Clear previous results
+                    grid.innerHTML = '';
+                    
+                    // Add character cards
+                    data.characters.forEach((character) => {
+                        const card = createCharacterCard(character);
+                        grid.appendChild(card);
+                    });
+                    
+                    grid.style.display = 'grid';
+                    noResults.style.display = 'none';
+                } else {
+                    grid.style.display = 'none';
+                    noResults.style.display = 'block';
+                }
+                
+                // Reset button state
+                const button = document.getElementById(buttonId);
+                if (button) {
+                    button.innerHTML = '<span class="btn-text">Search</span><span class="btn-loading" style="display: none;">Searching...</span>';
+                    button.disabled = false;
+                    button.classList.remove('opacity-75', 'cursor-not-allowed');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('results').style.display = 'block';
+                document.getElementById('resultsTitle').textContent = 'Error occurred';
+                document.getElementById('charactersGrid').style.display = 'none';
+                document.getElementById('noResults').style.display = 'block';
+                document.getElementById('noResults').innerHTML = '<p class="text-red-500">An error occurred while searching. Please try again.</p>';
+                
+                // Reset button state
+                const button = document.getElementById(buttonId);
+                if (button) {
+                    button.innerHTML = '<span class="btn-text">Search</span><span class="btn-loading" style="display: none;">Searching...</span>';
+                    button.disabled = false;
+                    button.classList.remove('opacity-75', 'cursor-not-allowed');
+                }
+            });
+    }
+
+    function createCharacterCard(character) {
+        const card = document.createElement('div');
+        card.className = 'character-card bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-500 transform hover:scale-105 border border-gray-200 hover:border-green-400/50';
+        
+        const statusClass = character.status === 'Alive' ? 'bg-green-400 text-gray-900' : 
+                           character.status === 'Dead' ? 'bg-red-400 text-white' : 
+                           'bg-gray-400 text-white';
+        
+        // Get episode number from URL
+        const episodeNumber = character.episode && character.episode.length > 0 ? 
+                            character.episode[0].split('/').pop() : 'Unknown';
+        
+        card.innerHTML = `
+            <div class="relative">
+                <img src="${character.image}" alt="${character.name}" class="w-full h-64 object-cover">
+                <div class="absolute top-4 right-4">
+                    <span class="px-3 py-1 rounded-full text-sm font-medium ${statusClass}">
+                        ${character.status}
+                    </span>
+                </div>
+            </div>
+            <div class="p-6">
+                <h3 class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-blue-600 mb-4">${character.name}</h3>
+                <div class="space-y-3">
+                    <p class="text-gray-600">
+                        <span class="text-green-600 font-medium">Species:</span> 
+                        <span class="text-gray-800">${character.species}</span>
+                    </p>
+                    ${character.type ? `
+                    <p class="text-gray-600">
+                        <span class="text-green-600 font-medium">Type:</span> 
+                        <span class="text-gray-800">${character.type}</span>
+                    </p>
+                    ` : ''}
+                    <p class="text-gray-600">
+                        <span class="text-green-600 font-medium">Gender:</span> 
+                        <span class="text-gray-800">${character.gender}</span>
+                    </p>
+                    <p class="text-gray-600">
+                        <span class="text-green-600 font-medium">Origin:</span> 
+                        <span class="text-gray-800">${character.origin.name}</span>
+                    </p>
+                    <p class="text-gray-600">
+                        <span class="text-green-600 font-medium">Location:</span> 
+                        <span class="text-gray-800">${character.location.name}</span>
+                    </p>
+                </div>
+            </div>
+            <div class="bg-gray-50 px-6 py-4 border-t border-gray-200">
+                <p class="text-sm text-gray-600">
+                    <span class="text-green-600 font-medium">First appearance:</span> Episode ${episodeNumber}
+                </p>
+            </div>
+        `;
+        
+        return card;
+    }
+});
+</script>
+{% endblock %}
