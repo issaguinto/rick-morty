@@ -189,4 +189,76 @@ class RickAndMortyApiClient
             return [];
         }
     }
+
+    public function getEpisode(string $id): array
+    {
+        try {
+            return $this->httpClient->request('GET', self::BASE_URL . '/episode/' . $id)->toArray();
+        } catch (\Exception $e) {
+            return [];
+        }
+    }
+
+    public function getEpisodeWithCharacters(string $id): array
+    {
+        try {
+            $episode = $this->httpClient->request('GET', self::BASE_URL . '/episode/' . $id)->toArray();
+            
+            if (empty($episode)) {
+                return [];
+            }
+
+            // If no characters in episode, return episode data without character_details
+            if (empty($episode['characters'])) {
+                $episode['character_details'] = [];
+                return $episode;
+            }
+
+            $characters = [];
+            $batchSize = 10;
+            $characterUrls = $episode['characters'];
+            
+            foreach (array_chunk($characterUrls, $batchSize) as $urlBatch) {
+                $responses = [];
+                
+                foreach ($urlBatch as $url) {
+                    try {
+                        $responses[] = $this->httpClient->request('GET', $url, ['timeout' => 5]);
+                    } catch (\Exception $e) {
+                        continue;
+                    }
+                }
+
+                foreach ($responses as $response) {
+                    try {
+                        $characterData = $response->toArray();
+                        if (!empty($characterData['name'])) { // Validate character data
+                            $characters[] = $characterData;
+                        }
+                    } catch (\Exception $e) {
+                        continue;
+                    }
+                }
+            }
+
+            $episode['character_details'] = $characters;
+            return $episode;
+        } catch (\Exception $e) {
+            return [];
+        }
+    }
+
+    public function searchEpisodes(string $name): array
+    {
+        try {
+            $response = $this->httpClient->request('GET', self::BASE_URL . '/episode', [
+                'query' => ['name' => $name],
+                'timeout' => 5
+            ])->toArray();
+
+            return $response['results'] ?? [];
+        } catch (\Exception $e) {
+            return [];
+        }
+    }
 }

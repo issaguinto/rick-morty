@@ -27,6 +27,16 @@ class CharacterController extends AbstractController
         ]);
     }
 
+    #[Route('/episodes', name: 'app_episodes')]
+    public function episodes(): Response
+    {
+        $episodes = $this->apiClient->getAllEpisodes();
+        
+        return $this->render('episodes/index.html.twig', [
+            'episodes' => $episodes
+        ]);
+    }
+
     // API endpoints for AJAX calls
     #[Route('/api/characters/dimension', name: 'api_characters_by_dimension')]
     public function apiByDimension(Request $request): Response
@@ -77,6 +87,28 @@ class CharacterController extends AbstractController
 
         return $this->render('character/detail.html.twig', [
             'character' => $character,
+        ]);
+    }
+
+    #[Route('/episode/{id}', name: 'app_episode_detail')]
+    public function episodeDetail(string $id): Response
+    {
+        $episode = $this->apiClient->getEpisodeWithCharacters($id);
+
+        return $this->render('episode/detail.html.twig', [
+            'episode' => $episode,
+        ]);
+    }
+
+    #[Route('/api/episodes/search', name: 'api_episodes_search')]
+    public function apiSearchEpisodes(Request $request): Response
+    {
+        $query = $request->query->get('q', '');
+        $episodes = $query ? $this->apiClient->searchEpisodes($query) : [];
+
+        return $this->json([
+            'episodes' => $episodes,
+            'total' => count($episodes)
         ]);
     }
 }
